@@ -64,10 +64,10 @@
 
 #define WAKEUP_BUTTON_PIN               BUTTON_0                                    /**< Button used to wake up the application. */
 
-#define ADVERTISING_LED_PIN_NO          LED_0                                       /**< LED to indicate advertising state. */
-#define CONNECTED_LED_PIN_NO            LED_1                                       /**< LED to indicate connected state. */
+#define ADVERTISING_LED_PIN_NO          28                                       /**< LED to indicate advertising state. */
+#define CONNECTED_LED_PIN_NO            28                                       /**< LED to indicate connected state. */
 
-#define DEVICE_NAME                     "Nordic_UART"                               /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME                     "Matthias_UART"                               /**< Name of device. Will be included in the advertising data. */
 
 #define APP_ADV_INTERVAL                64                                          /**< The advertising interval (in units of 0.625 ms. This value corresponds to 40 ms). */
 #define APP_ADV_TIMEOUT_IN_SECONDS      180                                         /**< The advertising timeout (in units of seconds). */
