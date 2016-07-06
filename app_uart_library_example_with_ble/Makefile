@@ -16,7 +16,7 @@ C_SOURCE_FILES += app_fifo.c
 C_SOURCE_FILES += app_gpiote.c
 C_SOURCE_FILES += ble_debug_assert_handler.c
 
-SDK_PATH = ../../../../../../
+SDK_PATH = ../../SDK_6.1.0/
 
 OUTPUT_FILENAME := ble_app_uart
 
