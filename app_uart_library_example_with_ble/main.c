@@ -62,7 +62,7 @@
 #define IS_SRVC_CHANGED_CHARACT_PRESENT 0                                           /**< Include or not the service_changed characteristic. if not enabled, the server's database cannot be changed for the lifetime of the device*/
 
 
-#define WAKEUP_BUTTON_PIN               BUTTON_0                                    /**< Button used to wake up the application. */
+//#define WAKEUP_BUTTON_PIN               BUTTON_0                                    /**< Button used to wake up the application. */
 
 #define ADVERTISING_LED_PIN_NO          28                                       /**< LED to indicate advertising state. */
 #define CONNECTED_LED_PIN_NO            28                                       /**< LED to indicate connected state. */
@@ -106,6 +106,17 @@ static ble_nus_t                        m_nus;                                  
 
 static bool ble_buffer_available = true;
 static bool tx_complete = false;
+
+
+static void println(char* s, uint8_t length)
+{
+    for (uint8_t i=0; i<length; i++)
+    {
+        app_uart_put(s[i]);
+    }
+    app_uart_put('\n');
+}
+
 
 /**@brief     Error handler function, which is called when an error has occurred.
  *
@@ -237,11 +248,7 @@ static void advertising_init(void)
 /**@snippet [Handling the data received over BLE] */
 void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t length)
 {
-    for (int i = 0; i < length; i++)
-    {
-        app_uart_put(p_data[i]);
-    }
-    app_uart_put('\n');
+    println((char*) p_data, length);
 }
 /**@snippet [Handling the data received over BLE] */
 
@@ -368,13 +375,15 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
     switch (p_ble_evt->header.evt_id)
     {
         case BLE_GAP_EVT_CONNECTED:
-            nrf_gpio_pin_set(CONNECTED_LED_PIN_NO);
+            println("BLE_GAP_EVT_CONNECTED", strlen("BLE_GAP_EVT_CONNECTED"));
             nrf_gpio_pin_clear(ADVERTISING_LED_PIN_NO);
+            nrf_gpio_pin_set(CONNECTED_LED_PIN_NO);
             m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
 
             break;
             
         case BLE_GAP_EVT_DISCONNECTED:
+            println("BLE_GAP_EVT_DISCONNECTED", strlen("BLE_GAP_EVT_DISCONNECTED"));
             nrf_gpio_pin_clear(CONNECTED_LED_PIN_NO);
             m_conn_handle = BLE_CONN_HANDLE_INVALID;
 
@@ -383,6 +392,7 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             break;
             
         case BLE_GAP_EVT_SEC_PARAMS_REQUEST:
+            println("BLE_GAP_EVT_SEC_PARAMS_REQUEST", strlen("BLE_GAP_EVT_SEC_PARAMS_REQUEST"));
             err_code = sd_ble_gap_sec_params_reply(m_conn_handle, 
                                                    BLE_GAP_SEC_STATUS_SUCCESS, 
                                                    &m_sec_params);
@@ -390,15 +400,18 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             break;
             
         case BLE_GATTS_EVT_SYS_ATTR_MISSING:
+            println("BLE_GATTS_EVT_SYS_ATTR_MISSING", strlen("BLE_GATTS_EVT_SYS_ATTR_MISSING"));
             err_code = sd_ble_gatts_sys_attr_set(m_conn_handle, NULL, 0);
             APP_ERROR_CHECK(err_code);
             break;
 
         case BLE_GAP_EVT_AUTH_STATUS:
+            println("BLE_GAP_EVT_AUTH_STATUS", strlen("BLE_GAP_EVT_AUTH_STATUS"));
             m_auth_status = p_ble_evt->evt.gap_evt.params.auth_status;
             break;
             
         case BLE_GAP_EVT_SEC_INFO_REQUEST:
+            println("BLE_GAP_EVT_SEC_INFO_REQUEST", strlen("BLE_GAP_EVT_SEC_INFO_REQUEST"));
             p_enc_info = &m_auth_status.periph_keys.enc_info;
             if (p_enc_info->div == p_ble_evt->evt.gap_evt.params.sec_info_request.div)
             {
@@ -414,14 +427,17 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             break;
 
         case BLE_GAP_EVT_TIMEOUT:
+            println("BLE_GAP_EVT_TIMEOUT", strlen("BLE_GAP_EVT_TIMEOUT"));
             if (p_ble_evt->evt.gap_evt.params.timeout.src == BLE_GAP_TIMEOUT_SRC_ADVERTISEMENT)
             { 
                 nrf_gpio_pin_clear(ADVERTISING_LED_PIN_NO);
 
+                /*
                 // Configure buttons with sense level low as wakeup source.
                 nrf_gpio_cfg_sense_input(WAKEUP_BUTTON_PIN,
                                          BUTTON_PULL,
                                          NRF_GPIO_PIN_SENSE_LOW);
+                */
                 
                 // Go to system-off mode (this function will not return; wakeup will cause a reset)
                 err_code = sd_power_system_off();    
@@ -429,10 +445,12 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             }
             break;
         case BLE_EVT_TX_COMPLETE:
+            println("BLE_EVT_TX_COMPLETE", strlen("BLE_EVT_TX_COMPLETE"));
             if(!ble_buffer_available) tx_complete = true;
             break;
 
         default:
+            println("unimplemented event", strlen("unimplemented event"));
             // No implementation needed.
             break;
     }
@@ -479,13 +497,14 @@ static void ble_stack_init(void)
 }
 
 /**@brief  Function for configuring the buttons.
- */
+
 static void buttons_init(void)
 {
     nrf_gpio_cfg_sense_input(WAKEUP_BUTTON_PIN,
                              BUTTON_PULL, 
                              NRF_GPIO_PIN_SENSE_LOW);    
 }
+*/
 
 
 /**@brief  Function for placing the application in low power state while waiting for events.
@@ -592,7 +611,7 @@ int main(void)
     // Initialize
     leds_init();
     timers_init();
-    buttons_init();
+//    buttons_init();
     uart_init();
     ble_stack_init();
     gap_params_init();

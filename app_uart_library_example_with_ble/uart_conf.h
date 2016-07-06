@@ -37,8 +37,8 @@ static const app_uart_comm_params_t comm_params =
 {
     .rx_pin_no  = 10,//RX_PIN_NUMBER,
     .tx_pin_no  = 12,//TX_PIN_NUMBER,
-    .rts_pin_no = RTS_PIN_NUMBER,
-    .cts_pin_no = CTS_PIN_NUMBER,
+    .rts_pin_no = 8,
+    .cts_pin_no = 6,
     //Below values are defined in ser_config.h common for application and connectivity
     .flow_control = APP_UART_FLOW_CONTROL_DISABLED,
     .use_parity   = false,
