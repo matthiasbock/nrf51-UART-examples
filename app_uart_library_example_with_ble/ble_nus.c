@@ -117,7 +117,7 @@ static uint32_t rx_char_add(ble_nus_t * p_nus, const ble_nus_init_t * p_nus_init
 
     BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.read_perm);
     BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.write_perm);
-    
+
     attr_md.vloc              = BLE_GATTS_VLOC_STACK;
     attr_md.rd_auth           = 0;
     attr_md.wr_auth           = 0;
@@ -224,8 +224,14 @@ uint32_t ble_nus_init(ble_nus_t * p_nus, const ble_nus_init_t * p_nus_init)
 {
     uint32_t        err_code;
     ble_uuid_t      ble_uuid;
+
+#ifdef NORDIC_UUID_STYLE
     ble_uuid128_t   nus_base_uuid = {{0x9E, 0xCA, 0xDC, 0x24, 0x0E, 0xE5, 0xA9, 0xE0,
                                      0x93, 0xF3, 0xA3, 0xB5, 0x00, 0x00, 0x40, 0x6E}};
+#else
+    ble_uuid128_t nus_base_uuid = {{0xFB, 0x34, 0x9B, 0x5F, 0x80, 0x00, 0x00, 0x80,
+                                    0x00, 0x10, 0x00, 0x00, 0x0F, 0x18, 0x00, 0x00}};
+#endif
 
     if ((p_nus == NULL) || (p_nus_init == NULL))
     {

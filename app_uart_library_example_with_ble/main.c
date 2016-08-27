@@ -64,10 +64,11 @@
 
 //#define WAKEUP_BUTTON_PIN               BUTTON_0                                    /**< Button used to wake up the application. */
 
-#define ADVERTISING_LED_PIN_NO          28                                       /**< LED to indicate advertising state. */
-#define CONNECTED_LED_PIN_NO            28                                       /**< LED to indicate connected state. */
+#define ADVERTISING_LED_PIN_NO          30                                       /**< LED to indicate advertising state. */
+#define CONNECTED_LED_PIN_NO            29                                       /**< LED to indicate connected state. */
+#define PIN_UART_ACTIVITY                        28
 
-#define DEVICE_NAME                     "Matthias_UART"                               /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME                     "Matthias UART"                               /**< Name of device. Will be included in the advertising data. */
 
 #define APP_ADV_INTERVAL                64                                          /**< The advertising interval (in units of 0.625 ms. This value corresponds to 40 ms). */
 #define APP_ADV_TIMEOUT_IN_SECONDS      180                                         /**< The advertising timeout (in units of seconds). */
@@ -108,16 +109,6 @@ static bool ble_buffer_available = true;
 static bool tx_complete = false;
 
 
-static void println(char* s, uint8_t length)
-{
-    for (uint8_t i=0; i<length; i++)
-    {
-        app_uart_put(s[i]);
-    }
-    app_uart_put('\n');
-}
-
-
 /**@brief     Error handler function, which is called when an error has occurred.
  *
  * @warning   This handler is an example only and does not fit a final product. You need to analyze
@@ -137,6 +128,7 @@ void app_error_handler(uint32_t error_code, uint32_t line_num, const uint8_t * p
     //                any communication.
     //                Use with care. Un-comment the line below to use.
     //ble_debug_assert_handler(error_code, line_num, p_file_name);
+    printf("Error #%d. Restarting.\n", error_code);
 
     // On assert, the system can only recover with a reset.
     NVIC_SystemReset();
@@ -222,23 +214,52 @@ static void advertising_init(void)
     ble_advdata_t advdata;
     ble_advdata_t scanrsp;
     uint8_t       flags = BLE_GAP_ADV_FLAGS_LE_ONLY_LIMITED_DISC_MODE;
-    
+
+#ifdef NORDIC_UUID_STYLE
     ble_uuid_t adv_uuids[] = {{BLE_UUID_NUS_SERVICE, m_nus.uuid_type}};
+#else
+    ble_uuid_t adv_uuids[] = {{BLE_UUID_NUS_SERVICE, BLE_UUID_TYPE_BLE}};
+#endif
 
     memset(&advdata, 0, sizeof(advdata));
     advdata.name_type               = BLE_ADVDATA_FULL_NAME;
-    advdata.include_appearance      = false;
+//    advdata.include_appearance      = false;
+    advdata.include_appearance      = true;
     advdata.flags.size              = sizeof(flags);
     advdata.flags.p_data            = &flags;
 
     memset(&scanrsp, 0, sizeof(scanrsp));
     scanrsp.uuids_complete.uuid_cnt = sizeof(adv_uuids) / sizeof(adv_uuids[0]);
     scanrsp.uuids_complete.p_uuids  = adv_uuids;
-    
+
     err_code = ble_advdata_set(&advdata, &scanrsp);
     APP_ERROR_CHECK(err_code);
+
+    // randomize MAC address
+    ble_gap_addr_t gap_address;
+    gap_address.addr_type = BLE_GAP_ADDR_TYPE_RANDOM_PRIVATE_NON_RESOLVABLE;
+    sd_ble_gap_address_set(BLE_GAP_ADDR_CYCLE_MODE_AUTO, &gap_address);
 }
 
+
+bool ble_attempt_to_send(uint8_t * data, uint8_t length)
+{
+    uint32_t err_code;
+
+    err_code = ble_nus_send_string(&m_nus, data, length);
+
+    if(err_code == BLE_ERROR_NO_TX_BUFFERS)
+    {
+        /* ble tx buffer full*/
+        return false;
+    }
+    else if (err_code != NRF_ERROR_INVALID_STATE)
+    {
+        APP_ERROR_CHECK(err_code);
+    }
+
+    return true;
+}
 
 /**@brief    Function for handling the data from the Nordic UART Service.
  *
@@ -248,7 +269,10 @@ static void advertising_init(void)
 /**@snippet [Handling the data received over BLE] */
 void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t length)
 {
-    println((char*) p_data, length);
+    nrf_gpio_pin_toggle(PIN_UART_ACTIVITY);
+    //printf("%s\n", p_data);
+    //ble_attempt_to_send(demo_string, strlen(demo_string));
+    ble_attempt_to_send(p_data, length);
 }
 /**@snippet [Handling the data received over BLE] */
 
@@ -375,15 +399,16 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
     switch (p_ble_evt->header.evt_id)
     {
         case BLE_GAP_EVT_CONNECTED:
-            println("BLE_GAP_EVT_CONNECTED", strlen("BLE_GAP_EVT_CONNECTED"));
             nrf_gpio_pin_clear(ADVERTISING_LED_PIN_NO);
             nrf_gpio_pin_set(CONNECTED_LED_PIN_NO);
+            nrf_gpio_pin_clear(PIN_UART_ACTIVITY);
             m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
 
             break;
             
         case BLE_GAP_EVT_DISCONNECTED:
-            println("BLE_GAP_EVT_DISCONNECTED", strlen("BLE_GAP_EVT_DISCONNECTED"));
+            nrf_gpio_pin_clear(PIN_UART_ACTIVITY);
+
             nrf_gpio_pin_clear(CONNECTED_LED_PIN_NO);
             m_conn_handle = BLE_CONN_HANDLE_INVALID;
 
@@ -392,7 +417,6 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             break;
             
         case BLE_GAP_EVT_SEC_PARAMS_REQUEST:
-            println("BLE_GAP_EVT_SEC_PARAMS_REQUEST", strlen("BLE_GAP_EVT_SEC_PARAMS_REQUEST"));
             err_code = sd_ble_gap_sec_params_reply(m_conn_handle, 
                                                    BLE_GAP_SEC_STATUS_SUCCESS, 
                                                    &m_sec_params);
@@ -400,18 +424,15 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             break;
             
         case BLE_GATTS_EVT_SYS_ATTR_MISSING:
-            println("BLE_GATTS_EVT_SYS_ATTR_MISSING", strlen("BLE_GATTS_EVT_SYS_ATTR_MISSING"));
             err_code = sd_ble_gatts_sys_attr_set(m_conn_handle, NULL, 0);
             APP_ERROR_CHECK(err_code);
             break;
 
         case BLE_GAP_EVT_AUTH_STATUS:
-            println("BLE_GAP_EVT_AUTH_STATUS", strlen("BLE_GAP_EVT_AUTH_STATUS"));
             m_auth_status = p_ble_evt->evt.gap_evt.params.auth_status;
             break;
             
         case BLE_GAP_EVT_SEC_INFO_REQUEST:
-            println("BLE_GAP_EVT_SEC_INFO_REQUEST", strlen("BLE_GAP_EVT_SEC_INFO_REQUEST"));
             p_enc_info = &m_auth_status.periph_keys.enc_info;
             if (p_enc_info->div == p_ble_evt->evt.gap_evt.params.sec_info_request.div)
             {
@@ -427,7 +448,6 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             break;
 
         case BLE_GAP_EVT_TIMEOUT:
-            println("BLE_GAP_EVT_TIMEOUT", strlen("BLE_GAP_EVT_TIMEOUT"));
             if (p_ble_evt->evt.gap_evt.params.timeout.src == BLE_GAP_TIMEOUT_SRC_ADVERTISEMENT)
             { 
                 nrf_gpio_pin_clear(ADVERTISING_LED_PIN_NO);
@@ -445,12 +465,11 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             }
             break;
         case BLE_EVT_TX_COMPLETE:
-            println("BLE_EVT_TX_COMPLETE", strlen("BLE_EVT_TX_COMPLETE"));
             if(!ble_buffer_available) tx_complete = true;
             break;
 
         default:
-            println("unimplemented event", strlen("unimplemented event"));
+            //printf("unimplemented event");
             // No implementation needed.
             break;
     }
@@ -516,8 +535,6 @@ static void power_manage(void)
 }
 
 
-
-
 void uart_putstring(const uint8_t * str)
 {
     uint32_t err_code;
@@ -528,7 +545,6 @@ void uart_putstring(const uint8_t * str)
         err_code = app_uart_put(str[i]);
         APP_ERROR_CHECK(err_code);
     }
-    
 }
 
 
@@ -542,11 +558,11 @@ void uart_putstring(const uint8_t * str)
 void uart_evt_callback(app_uart_evt_t * uart_evt)
 {
     //uint32_t err_code;
-	
+
     switch (uart_evt->evt_type)
     {
         case APP_UART_DATA:	
-						//Data is ready on the UART					
+            //Data is ready on the UART
             break;
 						
 		case APP_UART_DATA_READY:
@@ -578,27 +594,6 @@ static void uart_init(void)
     APP_ERROR_CHECK(err_code);
 }
 
-bool ble_attempt_to_send(uint8_t * data, uint8_t length)
-{
-    uint32_t err_code;
-    
-    err_code = ble_nus_send_string(&m_nus, data,length);
-    
-    if(err_code == BLE_ERROR_NO_TX_BUFFERS)
-    {
-        /* ble tx buffer full*/
-        return false;
-    }                   
-    else if (err_code != NRF_ERROR_INVALID_STATE)
-	{
-        APP_ERROR_CHECK(err_code);   
-    }
-    
-    return true;
-    
-    
-}
-
 /**@brief  Application main function.
  */
 int main(void)
@@ -608,6 +603,9 @@ int main(void)
     static uint8_t index = 0;
     uint8_t newbyte;
     
+    printf("Hello world\n");
+    nrf_gpio_cfg_output(PIN_UART_ACTIVITY);
+
     // Initialize
     leds_init();
     timers_init();
@@ -620,14 +618,19 @@ int main(void)
     conn_params_init();
     sec_params_init();
     
-    uart_putstring((const uint8_t *)START_STRING);
-    
+    printf("init complete.\n");
+
     advertising_start();
-    
+
+    for (;;)
+    {
+        asm("wfi");
+    }
+/*
     // Enter main loop
     for (;;)
     { 
-        /*Stop reading new data if there are no ble buffers available */
+        // Stop reading new data if there are no ble buffers available
         if(ble_buffer_available)
         {
             if(app_uart_get(&newbyte) == NRF_SUCCESS)
@@ -641,7 +644,7 @@ int main(void)
 				}
             }
         }
-        /* Re-transmission if ble_buffer_available was set to false*/
+        // Re-transmission if ble_buffer_available was set to false
         if(tx_complete)
         {
             tx_complete=false;
@@ -652,6 +655,7 @@ int main(void)
 
         power_manage();
     }
+*/
 }
 
 /** 
