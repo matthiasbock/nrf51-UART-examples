@@ -5,7 +5,8 @@ BOARD := BOARD_PCA10001
 C_SOURCE_FILES += main.c
 
 C_SOURCE_FILES += ble_srv_common.c
-C_SOURCE_FILES += ble_nus.c
+C_SOURCE_FILES += ble_uart.c
+C_SOURCE_FILES += nrf_delay.c
 
 C_SOURCE_FILES += ble_advdata.c
 C_SOURCE_FILES += ble_conn_params.c

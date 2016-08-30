@@ -45,19 +45,20 @@
 #include "nordic_common.h"
 #include "nrf.h"
 #include "nrf51_bitfields.h"
+#include "nrf_delay.h"
 #include "ble_hci.h"
 #include "ble_advdata.h"
 #include "ble_conn_params.h"
 #include "softdevice_handler.h"
 #include "app_timer.h"
 #include "app_button.h"
-#include "ble_nus.h"
 #include "app_uart.h"
 #include "uart_conf.h"
 #include "boards.h"
 #include "ble_error_log.h"
 #include "ble_debug_assert_handler.h"
 #include "app_util_platform.h"
+#include "ble_uart.h"
 
 #define IS_SRVC_CHANGED_CHARACT_PRESENT 0                                           /**< Include or not the service_changed characteristic. if not enabled, the server's database cannot be changed for the lifetime of the device*/
 
@@ -68,7 +69,7 @@
 #define CONNECTED_LED_PIN_NO            29                                       /**< LED to indicate connected state. */
 #define PIN_UART_ACTIVITY                        28
 
-#define DEVICE_NAME                     "Matthias UART"                               /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME                     "Nina"                               /**< Name of device. Will be included in the advertising data. */
 
 #define APP_ADV_INTERVAL                64                                          /**< The advertising interval (in units of 0.625 ms. This value corresponds to 40 ms). */
 #define APP_ADV_TIMEOUT_IN_SECONDS      180                                         /**< The advertising timeout (in units of seconds). */
@@ -215,6 +216,33 @@ static void advertising_init(void)
     ble_advdata_t scanrsp;
     uint8_t       flags = BLE_GAP_ADV_FLAGS_LE_ONLY_LIMITED_DISC_MODE;
 
+    /*
+     * Randomize MAC address
+     */
+    ble_gap_addr_t gap_address;
+    err_code = sd_ble_gap_address_get(&gap_address);
+    printf("Dis' your MAC: %x:%x:%x:%x:%x:%x\n",
+          gap_address.addr[5],
+          gap_address.addr[4],
+          gap_address.addr[3],
+          gap_address.addr[2],
+          gap_address.addr[1],
+          gap_address.addr[0]
+    );
+    gap_address.addr_type = BLE_GAP_ADDR_TYPE_PUBLIC;
+    gap_address.addr[5] = 0x42;
+    sd_ble_gap_address_set(BLE_GAP_ADDR_CYCLE_MODE_NONE, &gap_address);
+//    gap_address.addr_type = BLE_GAP_ADDR_TYPE_RANDOM_PRIVATE_NON_RESOLVABLE;
+//    sd_ble_gap_address_set(BLE_GAP_ADDR_CYCLE_MODE_AUTO, &gap_address);
+    printf("MAC address, I choose you: %x:%x:%x:%x:%x:%x\n",
+          gap_address.addr[5],
+          gap_address.addr[4],
+          gap_address.addr[3],
+          gap_address.addr[2],
+          gap_address.addr[1],
+          gap_address.addr[0]
+    );
+
 #ifdef NORDIC_UUID_STYLE
     ble_uuid_t adv_uuids[] = {{BLE_UUID_NUS_SERVICE, m_nus.uuid_type}};
 #else
@@ -234,11 +262,6 @@ static void advertising_init(void)
 
     err_code = ble_advdata_set(&advdata, &scanrsp);
     APP_ERROR_CHECK(err_code);
-
-    // randomize MAC address
-    ble_gap_addr_t gap_address;
-    gap_address.addr_type = BLE_GAP_ADDR_TYPE_RANDOM_PRIVATE_NON_RESOLVABLE;
-    sd_ble_gap_address_set(BLE_GAP_ADDR_CYCLE_MODE_AUTO, &gap_address);
 }
 
 
@@ -270,9 +293,8 @@ bool ble_attempt_to_send(uint8_t * data, uint8_t length)
 void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t length)
 {
     nrf_gpio_pin_toggle(PIN_UART_ACTIVITY);
-    //printf("%s\n", p_data);
-    //ble_attempt_to_send(demo_string, strlen(demo_string));
     ble_attempt_to_send(p_data, length);
+    //printf("%s\n", p_data);
 }
 /**@snippet [Handling the data received over BLE] */
 
@@ -598,11 +620,11 @@ static void uart_init(void)
  */
 int main(void)
 {
-    
+
     static uint8_t data_array[BLE_NUS_MAX_DATA_LEN];
     static uint8_t index = 0;
     uint8_t newbyte;
-    
+
     printf("Hello world\n");
     nrf_gpio_cfg_output(PIN_UART_ACTIVITY);
 
@@ -617,14 +639,17 @@ int main(void)
     advertising_init();
     conn_params_init();
     sec_params_init();
-    
+
     printf("init complete.\n");
 
     advertising_start();
 
     for (;;)
     {
-        asm("wfi");
+//        asm("wfi");
+        nrf_delay_ms(1000);
+        char* s = "Interoberlin!";
+        ble_attempt_to_send(s, strlen(s));
     }
 /*
     // Enter main loop
