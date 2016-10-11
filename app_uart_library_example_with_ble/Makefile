@@ -6,6 +6,8 @@ C_SOURCE_FILES += main.c
 
 C_SOURCE_FILES += ble_srv_common.c
 C_SOURCE_FILES += ble_uart.c
+C_SOURCE_FILES += bluetooth.c
+
 C_SOURCE_FILES += nrf_delay.c
 
 C_SOURCE_FILES += ble_advdata.c
