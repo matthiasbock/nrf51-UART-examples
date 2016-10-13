@@ -28,7 +28,9 @@ void app_error_handler(uint32_t error_code, uint32_t line_num, const uint8_t * p
     //                any communication.
     //                Use with care. Un-comment the line below to use.
     //ble_debug_assert_handler(error_code, line_num, p_file_name);
-    printf("Error #%d. Restarting.\n", error_code);
+    //printf("Error #%d. Restarting.\n", error_code);
+
+    printf("Error %#x in %s, line %u\nRestarting...\n", (unsigned int) error_code, (char*) p_file_name, (unsigned int) line_num);
 
     // On assert, the system can only recover with a reset.
     NVIC_SystemReset();
@@ -499,21 +501,7 @@ void uart_evt_callback(app_uart_evt_t * uart_evt)
     }
 
 }
-/**@brief  Function for initializing the UART module.
- */
-static void uart_init(void)
-{
-    uint32_t err_code;
 
-    APP_UART_FIFO_INIT(&comm_params,
-                        RX_BUF_SIZE,
-                        TX_BUF_SIZE,
-                        uart_evt_callback,
-                        UART_IRQ_PRIORITY,
-                        err_code);
-
-    APP_ERROR_CHECK(err_code);
-}
 
 void ble_init()
 {
@@ -521,7 +509,7 @@ void ble_init()
     leds_init();
     timers_init();
 //    buttons_init();
-    uart_init();
+//    uart_init();
     ble_stack_init();
     gap_params_init();
     services_init();
