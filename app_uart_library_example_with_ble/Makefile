@@ -3,21 +3,21 @@ BOARD := BOARD_PCA10001
 
 # application source
 C_SOURCE_FILES += main.c
-
-C_SOURCE_FILES += ble_srv_common.c
 C_SOURCE_FILES += ble_uart.c
 C_SOURCE_FILES += bluetooth.c
 
 C_SOURCE_FILES += nrf_delay.c
-
+C_SOURCE_FILES += ble_srv_common.c
 C_SOURCE_FILES += ble_advdata.c
 C_SOURCE_FILES += ble_conn_params.c
 C_SOURCE_FILES += softdevice_handler.c
 C_SOURCE_FILES += app_timer.c
-C_SOURCE_FILES += app_uart_fifo_mod.c
+#C_SOURCE_FILES += app_uart_fifo_mod.c
 C_SOURCE_FILES += app_fifo.c
 C_SOURCE_FILES += app_gpiote.c
 C_SOURCE_FILES += ble_debug_assert_handler.c
+
+C_SOURCE_FILES += led.c
 
 SDK_PATH = ../../SDK_6.1.0/
 

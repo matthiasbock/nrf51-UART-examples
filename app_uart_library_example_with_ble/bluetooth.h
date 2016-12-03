@@ -17,23 +17,20 @@
 #include "app_button.h"
 #include "app_uart.h"
 //#include "uart_conf.h"
-#include "boards.h"
+#include "board.h"
 #include "ble_error_log.h"
 #include "ble_debug_assert_handler.h"
 #include "app_util_platform.h"
 #include "ble_uart.h"
 
+#include "led.h"
 
 #define IS_SRVC_CHANGED_CHARACT_PRESENT 0                                           /**< Include or not the service_changed characteristic. if not enabled, the server's database cannot be changed for the lifetime of the device*/
 
 
 //#define WAKEUP_BUTTON_PIN               BUTTON_0                                    /**< Button used to wake up the application. */
 
-#define ADVERTISING_LED_PIN_NO          30                                       /**< LED to indicate advertising state. */
-#define CONNECTED_LED_PIN_NO            29                                       /**< LED to indicate connected state. */
-#define PIN_UART_ACTIVITY               28
-
-#define DEVICE_NAME                     "Bodensensor"                               /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME                     "Tree"                               /**< Name of device. Will be included in the advertising data. */
 
 #define APP_ADV_INTERVAL                64                                          /**< The advertising interval (in units of 0.625 ms. This value corresponds to 40 ms). */
 #define APP_ADV_TIMEOUT_IN_SECONDS      180                                         /**< The advertising timeout (in units of seconds). */
@@ -43,7 +40,7 @@
 #define APP_TIMER_OP_QUEUE_SIZE         4                                           /**< Size of timer operation queues. */
 
 #define MIN_CONN_INTERVAL               7.5                                          /**< Minimum acceptable connection interval (20 ms), Connection interval uses 1.25 ms units. */
-#define MAX_CONN_INTERVAL               60                                          /**< Maximum acceptable connection interval (75 ms), Connection interval uses 1.25 ms units. */
+#define MAX_CONN_INTERVAL               300                                          /**< Maximum acceptable connection interval (75 ms), Connection interval uses 1.25 ms units. */
 #define SLAVE_LATENCY                   0                                           /**< slave latency. */
 #define CONN_SUP_TIMEOUT                400                                         /**< Connection supervisory timeout (4 seconds), Supervision Timeout uses 10 ms units. */
 #define FIRST_CONN_PARAMS_UPDATE_DELAY  APP_TIMER_TICKS(5000, APP_TIMER_PRESCALER)  /**< Time from initiating event (connect or start of notification) to first time sd_ble_gap_conn_param_update is called (5 seconds). */

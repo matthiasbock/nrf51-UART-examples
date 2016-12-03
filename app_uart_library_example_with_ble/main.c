@@ -1,33 +1,3 @@
-/* Copyright (c) 2014 Nordic Semiconductor. All Rights Reserved.
- *
- * Use of this source code is governed by a BSD-style license that can be
- * found in the license.txt file.
- */
-
-/** @file
- * @brief    UART over BLE application using the app_uart library (event driven).
- *
- * This UART example is configured with flow control enabled which is necessary when softdevice
- * is enabled, in order to prevent data loss. To connect the development kit with your PC via 
- * UART, connect the configured RXD, TXD, RTS and CTS pins to the RXD, TXD, RTS and CTS pins 
- * on header P15 on the motherboard. Then connect the RS232 port on the nRFgo motherboard to
- * your PC. Configuration for UART pins is defined in the uart_conf.h header file.
- *
- * This file contains source code for a sample application that uses the Nordic UART service.
- * Connect to the UART example via Master Control Panel and the PCA10000 USB dongle, or via 
- * nRF UART 2.0 app for Android, or nRF UART app for IOS, available on 
- * https://www.nordicsemi.com/Products/nRFready-Demo-APPS.
- *
- * This example should be operated in the same way as the UART example for the evaluation board
- * in the SDK. Follow the same guide for this example, given on:
- * https://devzone.nordicsemi.com/documentation/nrf51/6.0.0/s110/html/a00066.html#project_uart_nus_eval_test
- *
- * This example uses FIFO RX and FIFO TX buffer to operate with the UART. You can set the size
- * for the FIFO buffers by modifying the RX_BUFFER_SIZE and TX_BUFFER_SIZE constants.
- *
- * Documentation for the app_uart library is given in UART driver documentation in the SDK at:
- * https://devzone.nordicsemi.com/documentation/nrf51/6.1.0/s110/html/a00008.html
- */
 
 /** @file
  *
@@ -52,9 +22,8 @@
 #include "softdevice_handler.h"
 #include "app_timer.h"
 #include "app_button.h"
-#include "app_uart.h"
-#include "uart_conf.h"
-#include "boards.h"
+//#include "app_uart.h"
+//#include "uart_conf.h"
 #include "ble_error_log.h"
 #include "ble_debug_assert_handler.h"
 #include "app_util_platform.h"
@@ -62,21 +31,58 @@
 #include "ble_uart.h"
 #include "bluetooth.h"
 
+#include "board.h"
+#include "led.h"
+
+// LED strips
+#define NUM_STRIPS      1
+#define TOTAL_NUM_LEDS  5
+neopixel_strip_t strip[NUM_STRIPS];
+const uint8_t strip_at_pin[NUM_STRIPS]   = {30}; //, 28, 2, 0};
+const uint8_t leds_per_strip[NUM_STRIPS] = {5};
+volatile bool strip_changed[NUM_STRIPS]  = {false}; //, false, false, false};
+
+// get the number of the strip from LED index
+const uint8_t led_to_strip[TOTAL_NUM_LEDS]          = {1, 1, 1, 1, 1};
+const uint8_t led_index_on_strip[TOTAL_NUM_LEDS]    = {0, 1, 2, 3, 4};
+
+
+uint8_t led_memory[TOTAL_NUM_LEDS * 3];
+
+/**
+ * @brief Initializes all LED strips
+ */
+void init_ledstrips()
+{
+    strip[0].leds = led_memory;
+
+    for (int strip_num=0; strip_num<NUM_STRIPS; strip_num++)
+    {
+        neopixel_init(&strip[strip_num], strip_at_pin[strip_num], leds_per_strip[strip_num]);
+        // unnecessary, filled with zeroes by startup script anyways
+        //neopixel_clear(&strip[strip_num]);
+        neopixel_show(&strip[strip_num]);
+    }
+}
 
 /**@brief  Application main function.
  */
 int main(void)
 {
-
-    static uint8_t data_array[BLE_NUS_MAX_DATA_LEN];
-    static uint8_t index = 0;
-    uint8_t newbyte;
-
     printf("Hello world\n");
-    nrf_gpio_cfg_output(PIN_UART_ACTIVITY);
+    nrf_gpio_cfg_output(PIN_LED_ADVERTISING);
+    nrf_gpio_cfg_output(PIN_LED_CONNECTED);
+    nrf_gpio_cfg_output(PIN_LED_ACTIVITY);
+
+    init_ledstrips();
 
     ble_init();
 
+    while (true)
+    {
+        asm("wfi");
+    }
+/*
     for (;;)
     {
 //        asm("wfi");
@@ -84,6 +90,7 @@ int main(void)
         char* s = "Interoberlin!";
         ble_attempt_to_send(s, strlen(s));
     }
+*/
 /*
     // Enter main loop
     for (;;)

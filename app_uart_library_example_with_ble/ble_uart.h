@@ -44,9 +44,9 @@
     #define BLE_UUID_NUS_TX_CHARACTERISTIC  0x0002                       /**< The UUID of the TX Characteristic. */
     #define BLE_UUID_NUS_RX_CHARACTERISTIC  0x0003                       /**< The UUID of the RX Characteristic. */
 #else
-    #define BLE_UUID_NUS_SERVICE            0x2001
-    #define BLE_UUID_NUS_TX_CHARACTERISTIC  0x2002  // write / write_wo_resp
-    #define BLE_UUID_NUS_RX_CHARACTERISTIC  0x2003  // notify
+    #define BLE_UUID_NUS_SERVICE            0x4001
+    #define BLE_UUID_NUS_TX_CHARACTERISTIC  0x4002  // write / write_wo_resp
+    #define BLE_UUID_NUS_RX_CHARACTERISTIC  0x4003  // notify
 #endif
 
 #define BLE_NUS_MAX_DATA_LEN            (GATT_MTU_SIZE_DEFAULT - 3)  /**< Maximum length of data (in bytes) that can be transmitted by the Nordic UART service module to the peer. */
